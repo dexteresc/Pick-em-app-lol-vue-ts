@@ -26,7 +26,15 @@ export default defineComponent({
   components: { ChampionGrid, Bans, Players, Side },
   async created() {
     this.currentVersion = await currentVersion
-    this.champions = await champions
+    this.champions = await axios
+      .get(
+        `https://ddragon.leagueoflegends.com/cdn/${this.currentVersion}/data/en_US/champion.json`
+      )
+      .then((res) => {
+        console.log(res.data.data)
+        return res.data.data
+      })
+      .catch((e) => console.error(e))
   },
   data() {
     return nonReactiveData({
@@ -93,29 +101,17 @@ export default defineComponent({
   },
   beforeMount() {},
   methods: {
-    getChampions(): object {
-      return champions
-    },
     getVersion(): any {
       return currentVersion
     }
   }
 })
-const currentVersion = await axios
+const currentVersion = axios
   .get('https://ddragon.leagueoflegends.com/api/versions.json')
   .then((res) => {
     console.log(res)
     return res.data[0]
   })
-const champions: object[] = await axios
-  .get(
-    `https://ddragon.leagueoflegends.com/cdn/${currentVersion}/data/en_US/champion.json`
-  )
-  .then((res) => {
-    console.log(res.data.data)
-    return res.data.data
-  })
-  .catch((e) => console.error(e))
 
 // helper
 function nonReactiveData<TData>(data: TData) {
