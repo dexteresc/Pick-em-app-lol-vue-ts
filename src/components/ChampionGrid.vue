@@ -1,11 +1,15 @@
 <template lang="pug">
-.champion-grid
-  .champion(v-for='champ in champions', :key='champ')
-    .champion-img
-      img(
-        :src='"https://ddragon.leagueoflegends.com/cdn/" + currentVersion + "/img/champion/" + champ.image.full'
-      )
-    .champion-name {{ champ.name }}
+.champion-grid-pick-em-wrapper
+  .search 
+    input(v-model='searchText')
+  .container
+    .champion-grid
+      .champion(v-for='champ in champions', :key='champ.key')
+        .champion-img
+          img(
+            :src='"https://ddragon.leagueoflegends.com/cdn/" + currentVersion + "/img/champion/" + champ.image.full'
+          )
+        .champion-name {{ champ.name }}
 </template>
 <script lang="ts">
 import { defineComponent, onUpdated } from 'vue'
@@ -20,18 +24,46 @@ export default defineComponent({
     currentVersion: {
       type: String,
       required: true
-    },
-    searchText: String
+    }
+  },
+  data() {
+    return {
+      searchText: ''
+    }
   },
   setup() {
     onUpdated(() => {})
   },
-  methods: {
+  methods: {},
+  computed: {
+    filterIt(): object {
+      let q = this.searchText.toLowerCase().trim()
+      if (q === '') {
+        return this.champions
+      }
+      let results: object[] = []
+      for (const key in this.champions) {
+        if (Object.hasOwnProperty.call(this.champions, key)) {
+          if (
+            this.champions[key].name.toLowerCase().includes(q) ||
+            this.champions[key].tags.includes(this.searchText.trim())
+          ) {
+            results.push(this.champions[key])
+          }
+        }
+      }
+      return results
+    }
   }
 })
 </script>
 <style lang="scss" scoped>
 @import '../styles/_globals.scss';
+.container {
+  height: 90%;
+  width: 100%;
+  box-sizing: border-box;
+}
 .champion-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
@@ -51,9 +83,6 @@ export default defineComponent({
   }
 
   .champion {
-    display: flex;
-    flex-flow: column;
-    align-items: center;
     font-size: 0.9em;
     color: #fff;
     cursor: pointer;

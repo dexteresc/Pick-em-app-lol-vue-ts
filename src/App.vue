@@ -8,12 +8,10 @@
       Bans(:bans='side.redSide.bans')
   main
     Players
-    .container
-      SearchBar(@input='filterIt.set')
-      ChampionGrid.champion-grid(
-        :champions='champions',
-        :currentVersion='currentVersion'
-      )
+    ChampionGrid.champion-grid-wrapper(
+      :champions='champions',
+      :currentVersion='currentVersion'
+    )
     Players
   footer
 </template>
@@ -21,14 +19,14 @@
 <script lang="ts">
 import axios from 'axios'
 import { defineComponent } from 'vue'
-import { ChampionGrid, Bans, Players, SearchBar, Side } from './components/'
+import { ChampionGrid, Bans, Players, Side } from './components'
 
 export default defineComponent({
   name: 'App',
-  components: { ChampionGrid, Bans, Players, SearchBar, Side },
-  created() {
-    this.currentVersion = currentVersion
-    this.champions = champions
+  components: { ChampionGrid, Bans, Players, Side },
+  async created() {
+    this.currentVersion = await currentVersion
+    this.champions = await champions
   },
   data() {
     return nonReactiveData({
@@ -57,7 +55,8 @@ export default defineComponent({
               name: 'b5',
               champion: {}
             }
-          ]
+          ],
+          bans: [1, 2, 3, 4, 5]
         },
         redSide: {
           name: 'Team 2',
@@ -82,14 +81,14 @@ export default defineComponent({
               name: 'r5',
               champion: {}
             }
-          ]
+          ],
+          bans: [1, 2, 3, 4, 5]
         }
       },
-      searchText: ''
+      champions: [] as object[]
     })<{
       // Non reactive data
       currentVersion: ''
-      champions: []
     }>()
   },
   beforeMount() {},
@@ -100,31 +99,6 @@ export default defineComponent({
     getVersion(): any {
       return currentVersion
     }
-  },
-  computed: {
-    filterIt: {
-      get(): object[] {
-        let q = this.searchText.toLowerCase().trim()
-        if (q === '') {
-          return this.champions
-        }
-        let results: object[] = []
-        for (const key in this.champions) {
-          if (Object.hasOwnProperty.call(this.champions, key)) {
-            if (
-              this.champions[key].name.toLowerCase().includes(q) ||
-              this.champions[key].tags.includes(this.searchText.trim())
-            ) {
-              results.push(this.champions[key])
-            }
-          }
-        }
-        return results
-      },
-      set(q: string) {
-        this.searchText = q
-      }
-    }
   }
 })
 const currentVersion = await axios
@@ -133,7 +107,7 @@ const currentVersion = await axios
     console.log(res)
     return res.data[0]
   })
-const champions = await axios
+const champions: object[] = await axios
   .get(
     `https://ddragon.leagueoflegends.com/cdn/${currentVersion}/data/en_US/champion.json`
   )
@@ -180,7 +154,7 @@ main {
   display: flex;
   flex-flow: row;
   height: 80vh;
-  .champion-grid {
+  .champion-grid-wrapper {
     flex: 1 1 40%;
   }
   .blue,
