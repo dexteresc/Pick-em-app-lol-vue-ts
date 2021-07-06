@@ -7,11 +7,8 @@
     Side.red-side(:name='side.redSide.name')
       Bans(:bans='side.redSide.bans')
   main
-    Players
-    ChampionGrid.champion-grid-wrapper(
-      :champions='champions',
-      :currentVersion='currentVersion'
-    )
+    Players.blue-side(:players='side.blueSide.players')
+    ChampionGrid.champion-grid-wrapper(:champions='champions')
     Players
   footer
 </template>
@@ -21,102 +18,136 @@ import axios from 'axios'
 import { defineComponent } from 'vue'
 import { ChampionGrid, Bans, Players, Side } from './components'
 
+/**
+ * Interface for champion
+ * @typedef {object} Champion
+ */
+export interface Champion {
+  /** Name of the champion */
+  name: string
+  /** Champion key */
+  key: number
+  /**
+   * Champion image address
+   * @example "Aatrox.png"
+   */
+  image: string
+  /**
+   * Champion tags
+   * @example ["Support", "Tank"]
+   */
+  tags?: string[]
+}
+
+/**
+ * Interface for player
+ * @typedef {object} Player
+ */
+export interface Player {
+  /** Player name */
+  name: string
+  /** Players selected champion */
+  champion: Champion
+}
+
+/**
+ * App component
+ * @displayName App
+ */
 export default defineComponent({
   name: 'App',
   components: { ChampionGrid, Bans, Players, Side },
+  /**
+   * Instanciate currentVersion and champions at app start.
+   * Values won't change until reload. (Intentional)
+   */
   async created() {
-    this.currentVersion = await currentVersion
+    this.currentVersion = await axios
+      .get('https://ddragon.leagueoflegends.com/api/versions.json')
+      .then((res) => {
+        return res.data[0]
+      })
     this.champions = await axios
       .get(
         `https://ddragon.leagueoflegends.com/cdn/${this.currentVersion}/data/en_US/champion.json`
       )
       .then((res) => {
-        console.log(res.data.data)
-        return res.data.data
+        let arr: any = []
+        for (const champ in res.data.data) {
+          if (Object.prototype.hasOwnProperty.call(res.data.data, champ)) {
+            const element = res.data.data[champ]
+            const champion: Champion = {
+              name: element.name,
+              key: element.key,
+              image: element.image.full,
+              tags: element.tags
+            }
+            arr.push(champion)
+          }
+        }
+        console.dir(arr)
+        return arr
       })
       .catch((e) => console.error(e))
+    console.log(this.currentVersion)
+    this.side.redSide.players = [
+      {
+        name: 'r1',
+        champion: this.noChamp
+      },
+      {
+        name: 'r2',
+        champion: this.noChamp
+      },
+      {
+        name: 'r3',
+        champion: this.noChamp
+      },
+      {
+        name: 'r4',
+        champion: this.noChamp
+      },
+      {
+        name: 'r5',
+        champion: this.noChamp
+      }
+    ]
+
+    console.log(this.side.blueSide.players)
+  },
+  setup() {
+    const noChamp: Champion = {
+      name: '',
+      image: '',
+      key: 0
+    }
+    return { noChamp }
   },
   data() {
-    return nonReactiveData({
-      // reactive
+    return {
+      /**
+       * Each sides respective data
+       * @property {string} name The teams name
+       * @property {players}
+       */
       side: {
         blueSide: {
           name: 'Team 1',
-          players: [
-            {
-              name: 'b1',
-              champion: {}
-            },
-            {
-              name: 'b2',
-              champion: {}
-            },
-            {
-              name: 'b3',
-              champion: {}
-            },
-            {
-              name: 'b4',
-              champion: {}
-            },
-            {
-              name: 'b5',
-              champion: {}
-            }
-          ],
+          players: [] as Player[],
           bans: [1, 2, 3, 4, 5]
         },
         redSide: {
           name: 'Team 2',
-          players: [
-            {
-              name: 'r1',
-              champion: {}
-            },
-            {
-              name: 'r2',
-              champion: {}
-            },
-            {
-              name: 'r3',
-              champion: {}
-            },
-            {
-              name: 'r4',
-              champion: {}
-            },
-            {
-              name: 'r5',
-              champion: {}
-            }
-          ],
+          players: [] as Player[],
           bans: [1, 2, 3, 4, 5]
         }
       },
-      champions: [] as object[]
-    })<{
-      // Non reactive data
-      currentVersion: ''
-    }>()
-  },
-  beforeMount() {},
-  methods: {
-    getVersion(): any {
-      return currentVersion
+      currentVersion: '' as string,
+
+      champions: []
     }
   }
 })
-const currentVersion = axios
-  .get('https://ddragon.leagueoflegends.com/api/versions.json')
-  .then((res) => {
-    console.log(res)
-    return res.data[0]
-  })
-
-// helper
-function nonReactiveData<TData>(data: TData) {
-  return <TNonReactiveData>() => data as TData & TNonReactiveData
-}
 </script>
 
 <style lang="scss">

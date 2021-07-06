@@ -4,25 +4,28 @@
     input(v-model='searchText')
   .container
     .champion-grid
-      .champion(v-for='champ in champions', :key='champ.key')
+      .champion(v-for='champ in filterIt', :key='champ.key')
         .champion-img
           img(
-            :src='"https://ddragon.leagueoflegends.com/cdn/" + currentVersion + "/img/champion/" + champ.image.full'
+            :src='"https://ddragon.leagueoflegends.com/cdn/" + currentVersion + "/img/champion/" + champ.image'
           )
         .champion-name {{ champ.name }}
 </template>
 <script lang="ts">
-import { defineComponent, onUpdated } from 'vue'
+import { defineComponent, onMounted, PropType } from 'vue'
+import { Champion } from '../App.vue'
 
 export default defineComponent({
   name: 'ChampionGrid',
+  inject: ['currentVersion'],
   props: {
+    /**
+     * Champion[] containing champions
+     * @type Champion[]
+     * @required true
+     */
     champions: {
-      type: Object,
-      required: true
-    },
-    currentVersion: {
-      type: String,
+      type: Array as PropType<Champion[]>,
       required: true
     }
   },
@@ -31,28 +34,22 @@ export default defineComponent({
       searchText: ''
     }
   },
-  setup() {
-    onUpdated(() => {})
-  },
+  setup() {},
   methods: {},
   computed: {
-    filterIt(): object {
-      let q = this.searchText.toLowerCase().trim()
-      if (q === '') {
+    /**
+     * Returns the champions matching the search query
+     * @type Champion[] | undefined
+     */
+    filterIt(): Champion[] | undefined {
+      let q: string = this.searchText.toLowerCase().trim()
+      if (q === '' || /\d/.test(q)) {
         return this.champions
+      } else {
+        return this.champions?.filter((champ) => {
+          return champ.name.toLowerCase().includes(q)
+        })
       }
-      let results: object[] = []
-      for (const key in this.champions) {
-        if (Object.hasOwnProperty.call(this.champions, key)) {
-          if (
-            this.champions[key].name.toLowerCase().includes(q) ||
-            this.champions[key].tags.includes(this.searchText.trim())
-          ) {
-            results.push(this.champions[key])
-          }
-        }
-      }
-      return results
     }
   }
 })
@@ -67,7 +64,7 @@ export default defineComponent({
 .champion-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-  height: 100%;
+  max-height: 100%;
   box-sizing: border-box;
   gap: 3px 0;
   overflow-y: scroll;
