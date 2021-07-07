@@ -4,7 +4,12 @@
     input(v-model='searchText')
   .container
     .champion-grid
-      .champion(v-for='champ in filterIt', :key='champ.key')
+      .champion(
+        v-for='champ in filterIt',
+        :key='champ.key',
+        @click='active === champ ? updateActive(null) : updateActive(champ)',
+        :class='active === champ ? "active" : ""'
+      )
         .champion-img
           img(
             :src='"https://ddragon.leagueoflegends.com/cdn/" + currentVersion + "/img/champion/" + champ.image'
@@ -12,12 +17,12 @@
         .champion-name {{ champ.name }}
 </template>
 <script lang="ts">
-import { defineComponent, onMounted, PropType } from 'vue'
+import { defineComponent, inject, PropType } from 'vue'
 import { Champion } from '../App.vue'
 
 export default defineComponent({
   name: 'ChampionGrid',
-  inject: ['currentVersion'],
+  components: {},
   props: {
     /**
      * Champion[] containing champions
@@ -27,6 +32,23 @@ export default defineComponent({
     champions: {
       type: Array as PropType<Champion[]>,
       required: true
+    },
+    /**
+     * Current version of League of Legends
+     * @type String
+     * @required true
+     */
+    currentVersion: {
+      type: String,
+      required: true
+    }
+  },
+  setup() {
+    const active = inject('active')
+    const updateActive = inject('updateActive')
+    return {
+      active,
+      updateActive
     }
   },
   data() {
@@ -34,7 +56,6 @@ export default defineComponent({
       searchText: ''
     }
   },
-  setup() {},
   methods: {},
   computed: {
     /**
@@ -54,7 +75,7 @@ export default defineComponent({
   }
 })
 </script>
-<style lang="scss" scoped>
+<style lang="scss">
 @import '../styles/_globals.scss';
 .container {
   height: 90%;
@@ -63,9 +84,10 @@ export default defineComponent({
 }
 .champion-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(95px, 1fr));
   max-height: 100%;
   box-sizing: border-box;
+  padding: 3px 0;
   gap: 3px 0;
   overflow-y: scroll;
   &::-webkit-scrollbar {
@@ -83,9 +105,11 @@ export default defineComponent({
     font-size: 0.9em;
     color: #fff;
     cursor: pointer;
-    img {
-      margin-bottom: 3px;
+    .champion-name {
+      font-size: small;
+      margin-top: 3px;
     }
+
     &.active {
       box-sizing: content-box;
       img {
@@ -98,9 +122,17 @@ export default defineComponent({
       }
     }
   }
+}
+.champion-img {
+  display: block;
+  background-color: $primary-light;
+  width: 80px;
+  height: 80px;
+  margin: auto;
+
   img {
-    width: 80px;
-    height: 80px;
+    width: 100%;
+    height: 100%;
   }
 }
 </style>
