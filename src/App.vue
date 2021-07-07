@@ -7,19 +7,29 @@
     Side.red-side(:name='side.redSide.name')
       Bans(:bans='side.redSide.bans')
   main
-    Players.blue-side(:players='side.blueSide.players')
-    ChampionGrid.champion-grid-wrapper(:champions='champions')
-    Players
+    Players.blue-side(
+      :players='side.blueSide.players',
+      :currentVersion='currentVersion'
+    )
+    ChampionGrid.champion-grid-wrapper(
+      :champions='champions',
+      :currentVersion='currentVersion'
+    )
+    Players.red-side(
+      :players='side.redSide.players',
+      :currentVersion='currentVersion'
+    )
   footer
+    p [Your product] isn't endorsed by Riot Games and doesn't reflect the views or opinions of Riot Games or anyone officially involved in producing or managing Riot Games properties. Riot Games, and all associated properties are trademarks or registered trademarks of Riot Games, Inc.
 </template>
 
 <script lang="ts">
 import axios from 'axios'
-import { defineComponent } from 'vue'
+import { defineComponent, provide, ref } from 'vue'
 import { ChampionGrid, Bans, Players, Side } from './components'
 
 /**
- * Interface for champion
+ * Champion inteface
  * @typedef {object} Champion
  */
 export interface Champion {
@@ -47,7 +57,7 @@ export interface Player {
   /** Player name */
   name: string
   /** Players selected champion */
-  champion: Champion
+  champion: Champion | null // Think null is ok here, (undefined?)
 }
 
 /**
@@ -57,19 +67,37 @@ export interface Player {
 export default defineComponent({
   name: 'App',
   components: { ChampionGrid, Bans, Players, Side },
+  setup() {
+    const active = ref<Champion | Player | null>(null)
+    /**
+     * Update the active/selected champion or player
+     * @param {Champion} champion Champion or null
+     */
+    const updateActive = (champion: Champion | Player | null) => {
+      if (champion) {
+        console.log(champion)
+        active.value = champion
+      } else {
+        active.value = null
+      }
+    }
+
+    provide('active', active)
+    provide('updateActive', updateActive)
+  },
   /**
    * Instanciate currentVersion and champions at app start.
    * Values won't change until reload. (Intentional)
    */
   async created() {
-    this.currentVersion = await axios
+    const currentVersion = await axios
       .get('https://ddragon.leagueoflegends.com/api/versions.json')
       .then((res) => {
         return res.data[0]
       })
-    this.champions = await axios
+    const champions = await axios
       .get(
-        `https://ddragon.leagueoflegends.com/cdn/${this.currentVersion}/data/en_US/champion.json`
+        `https://ddragon.leagueoflegends.com/cdn/${currentVersion}/data/en_US/champion.json`
       )
       .then((res) => {
         let arr: any = []
@@ -89,39 +117,32 @@ export default defineComponent({
         return arr
       })
       .catch((e) => console.error(e))
-    console.log(this.currentVersion)
+
+    this.currentVersion = currentVersion
+    this.champions = champions
+
     this.side.redSide.players = [
       {
         name: 'r1',
-        champion: this.noChamp
+        champion: null
       },
       {
         name: 'r2',
-        champion: this.noChamp
+        champion: null
       },
       {
         name: 'r3',
-        champion: this.noChamp
+        champion: null
       },
       {
         name: 'r4',
-        champion: this.noChamp
+        champion: null
       },
       {
         name: 'r5',
-        champion: this.noChamp
+        champion: null
       }
     ]
-
-    console.log(this.side.blueSide.players)
-  },
-  setup() {
-    const noChamp: Champion = {
-      name: '',
-      image: '',
-      key: 0
-    }
-    return { noChamp }
   },
   data() {
     return {
@@ -144,7 +165,7 @@ export default defineComponent({
       },
       currentVersion: '' as string,
 
-      champions: []
+      champions: [] as Champion[]
     }
   }
 })
