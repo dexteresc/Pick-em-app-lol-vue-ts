@@ -14,29 +14,30 @@ export default defineComponent({
     currentVersion: String
   },
   methods: {
-    activate(player: Player) {
-      // MAYBE NOT EFFICIENT
+    activate(player: Player): void {
       if (this.active) {
-        if (this.isChampion(this.active)) {
-          // If active is of Champion type
-          if (player.champion?.used) {
-            player.champion.used = false
-          }
-          player.champion = this.active as Champion
-          this.active.used = true
+        if (this.active === player) {
           this.updateActive(null)
         } else {
-          // If active is not of Champion type
-          if (!this.active.champion || !player.champion) {
-            // if either of the players doesn't have champ
-            console.log(1)
-            this.updateActive(player)
-          } else {
-            console.log(2)
-
-            player.champion = this.active.champion
-            this.active.champion = player.champion
+          if (this.isChampion(this.active)) {
+            // if active is champion
+            this.active.used = true
+            if (player.champion) {
+              player.champion.used = false
+            }
+            player.champion = this.active
             this.updateActive(null)
+          } else {
+            // if active is player
+            if (player.champion || this.active.champion) {
+              // if player has champion or active has champion
+              let playerChamp = player.champion || null
+              player.champion = this.active.champion
+              this.active.champion = playerChamp
+              this.updateActive(null)
+            } else {
+              this.updateActive(player)
+            }
           }
         }
       } else {
