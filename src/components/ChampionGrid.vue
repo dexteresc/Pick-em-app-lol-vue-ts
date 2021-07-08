@@ -1,5 +1,5 @@
 <template lang="pug">
-.champion-grid-pick-em-wrapper
+.champion-grid-wrapper
   .search 
     input(v-model='searchText')
   .container
@@ -7,8 +7,8 @@
       .champion(
         v-for='champ in filterIt',
         :key='champ.key',
-        @click='active === champ ? updateActive(null) : updateActive(champ)',
-        :class='active === champ ? "active" : ""'
+        @click='activate(champ)',
+        :class='{ used: champ.used, active: active === champ }'
       )
         .champion-img
           img(
@@ -18,7 +18,7 @@
 </template>
 <script lang="ts">
 import { defineComponent, inject, PropType } from 'vue'
-import { Champion } from '../App.vue'
+import { Champion, Player } from '../App.vue'
 
 export default defineComponent({
   name: 'ChampionGrid',
@@ -44,8 +44,8 @@ export default defineComponent({
     }
   },
   setup() {
-    const active = inject('active')
-    const updateActive = inject('updateActive')
+    const active: any = inject('active')
+    const updateActive: any = inject('updateActive')
     return {
       active,
       updateActive
@@ -56,7 +56,38 @@ export default defineComponent({
       searchText: ''
     }
   },
-  methods: {},
+  methods: {
+    activate(champion: Champion) {
+      if (this.active) {
+        // if selected
+        if (!champion.used) {
+          // if champ not used
+          if (this.active === champion) {
+            this.updateActive(null)
+          } else if (this.isPlayer(this.active)) {
+            if (this.active.champion) {
+              this.active.champion.used = false
+            }
+            champion.used = true // Set Champion used to true
+            this.active.champion = champion
+            this.updateActive(null)
+          } else {
+            console.assert(
+              this.active.champion.used === false,
+              'FUCKING SHIT REWRITE THIS SHIT'
+            )
+            this.updateActive(champion)
+          }
+        }
+      } else if (!champion.used) {
+        this.updateActive(champion)
+      }
+    },
+    // active === champ || champ.used ? updateActive(null) : updateActive(champ)
+    isPlayer(object: any): object is Player {
+      return 'champion' in object
+    }
+  },
   computed: {
     /**
      * Returns the champions matching the search query
@@ -64,7 +95,7 @@ export default defineComponent({
      */
     filterIt(): Champion[] | undefined {
       let q: string = this.searchText.toLowerCase().trim()
-      if (q === '' || /\d/.test(q)) {
+      if (q === '') {
         return this.champions
       } else {
         return this.champions?.filter((champ) => {
@@ -75,7 +106,7 @@ export default defineComponent({
   }
 })
 </script>
-<style lang="scss">
+<style lang="scss" scoped>
 @import '../styles/_globals.scss';
 .container {
   height: 90%;
@@ -109,13 +140,6 @@ export default defineComponent({
       font-size: small;
       margin-top: 3px;
     }
-
-    &.active {
-      box-sizing: content-box;
-      img {
-        outline: $light solid 3px;
-      }
-    }
     &:hover {
       img {
         box-shadow: 0 0 3pt $light;
@@ -123,16 +147,16 @@ export default defineComponent({
     }
   }
 }
-.champion-img {
-  display: block;
-  background-color: $primary-light;
-  width: 80px;
-  height: 80px;
-  margin: auto;
-
+.used {
+  cursor: default;
   img {
-    width: 100%;
-    height: 100%;
+    filter: grayscale(100%);
+  }
+}
+.active {
+  box-sizing: content-box;
+  .champion-img {
+    outline: $light solid 3px;
   }
 }
 </style>
