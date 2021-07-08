@@ -47,6 +47,8 @@ export interface Champion {
    * @example ["Support", "Tank"]
    */
   tags?: string[]
+  /** If champion is already used or not */
+  used?: boolean
 }
 
 /**
@@ -75,7 +77,6 @@ export default defineComponent({
      */
     const updateActive = (champion: Champion | Player | null) => {
       if (champion) {
-        console.log(champion)
         active.value = champion
       } else {
         active.value = null
@@ -113,7 +114,6 @@ export default defineComponent({
             arr.push(champion)
           }
         }
-        console.dir(arr)
         return arr
       })
       .catch((e) => console.error(e))
@@ -121,6 +121,28 @@ export default defineComponent({
     this.currentVersion = currentVersion
     this.champions = champions
 
+    this.side.blueSide.players = [
+      {
+        name: 'b1',
+        champion: null
+      },
+      {
+        name: 'b2',
+        champion: null
+      },
+      {
+        name: 'b3',
+        champion: null
+      },
+      {
+        name: 'b4',
+        champion: null
+      },
+      {
+        name: 'b5',
+        champion: null
+      }
+    ]
     this.side.redSide.players = [
       {
         name: 'r1',
@@ -167,7 +189,8 @@ export default defineComponent({
 
       champions: [] as Champion[]
     }
-  }
+  },
+  methods: {}
 })
 </script>
 
@@ -204,12 +227,31 @@ main {
   height: 80vh;
   .champion-grid-wrapper {
     flex: 1 1 40%;
+    margin: 0 3%;
   }
-  .blue,
-  .red {
+  .blue-side,
+  .red-side {
     flex: 0 0 auto;
+    display: flex;
+    flex-flow: column;
+    justify-content: space-evenly;
   }
 }
+
+// GLOBALS
+.champion-img {
+  display: block;
+  background-color: $primary-light;
+  width: 80px;
+  height: 80px;
+  margin: auto;
+
+  img {
+    width: 100%;
+    height: 100%;
+  }
+}
+
 .container {
   width: 100%;
   background-color: $primary-light;
